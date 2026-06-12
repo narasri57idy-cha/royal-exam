@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แบบทดสอบทหารชั้นประทวน</title>
+<style>
+:root{--navy:#1a2e4a;--navy2:#243d5e;--gold:#c9a84c;--gold2:#f0d080;--bg:#f4f2ee;--white:#fff;--text:#1a1a1a;--muted:#5a6070;--green:#2d7a4f;--gbg:#e8f5ee;--red:#b83232;--rbg:#fdeaea;--bbg:#e8f0fa;--blue:#1a5fa8;--r:12px;--sh:0 2px 12px rgba(0,0,0,0.10);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sarabun','Noto Sans Thai',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ===== COVER ===== */
+#cover{display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:2rem 1rem;}
+.emblem{width:82px;height:82px;background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:1.2rem;box-shadow:0 6px 24px rgba(26,46,74,.35);}
+.emblem svg{width:46px;height:46px;fill:var(--gold);}
+.ctitle{font-size:26px;font-weight:800;color:var(--navy);text-align:center;}
+.csub{font-size:13px;color:var(--muted);margin:.35rem 0 1.5rem;text-align:center;}
+
+/* Mode cards */
+.mode-row{display:flex;gap:14px;margin-bottom:1.5rem;flex-wrap:wrap;justify-content:center;width:100%;max-width:700px;}
+.mode-card{flex:1;min-width:220px;max-width:330px;border-radius:var(--r);padding:20px 22px;cursor:pointer;border:2.5px solid #ddd;background:var(--white);transition:all .18s;box-shadow:var(--sh);text-align:left;}
+.mode-card:hover{border-color:var(--navy);transform:translateY(-2px);}
+.mode-card.active{border-color:var(--gold);background:#fffdf4;}
+.mode-icon{font-size:28px;margin-bottom:8px;}
+.mode-title{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.mode-desc{font-size:12px;color:var(--muted);line-height:1.6;}
+.mode-tag{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+.tag-full{background:#e8f0fb;color:var(--blue);}
+.tag-custom{background:#e8f5ee;color:var(--green);}
+
+/* Subject picker */
+#subj-picker{display:none;width:100%;max-width:700px;margin-bottom:1.25rem;}
+.subj-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:8px;}
+.schk{display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid #ddd;border-radius:10px;padding:11px 14px;cursor:pointer;transition:all .15s;font-size:14px;}
+.schk:hover{border-color:var(--navy);}
+.schk.checked{border-color:var(--gold);background:#fffdf4;}
+.schk input{width:17px;height:17px;accent-color:var(--gold);cursor:pointer;}
+.schk-info{display:flex;flex-direction:column;}
+.schk-name{font-weight:600;color:var(--text);}
+.schk-meta{font-size:11px;color:var(--muted);}
+
+/* Loading / error */
+.loading-box{background:var(--white);border-radius:var(--r);padding:18px 28px;margin-bottom:1.25rem;text-align:center;box-shadow:var(--sh);display:none;width:100%;max-width:420px;}
+.loading-text{font-size:14px;color:var(--muted);}
+.spinner{width:30px;height:30px;border:3px solid #e0ddd6;border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:var(--rbg);border:1px solid #f5c0c0;border-radius:var(--r);padding:14px 20px;margin-bottom:1.25rem;font-size:14px;color:var(--red);display:none;max-width:520px;width:100%;}
+.start-btn{background:var(--navy);color:var(--white);border:none;border-radius:var(--r);padding:14px 52px;font-size:17px;font-weight:800;cursor:pointer;transition:all .15s;box-shadow:0 4px 16px rgba(26,46,74,.25);letter-spacing:.5px;}
+.start-btn:hover{background:var(--navy2);transform:translateY(-1px);}
+.start-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.start-note{font-size:12px;color:var(--muted);margin-top:10px;text-align:center;}
+
+/* ===== EXAM ===== */
+#exam{display:none;max-width:780px;margin:0 auto;padding:1rem;}
+.topbar{background:var(--navy);color:var(--white);border-radius:var(--r);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:8px;position:sticky;top:8px;z-index:10;box-shadow:0 4px 16px rgba(26,46,74,.32);}
+.tb-left{display:flex;flex-direction:column;gap:2px;}
+.tb-counter{font-size:13px;opacity:.75;}
+.tb-prog{font-size:15px;font-weight:700;}
+.tb-mid{display:flex;flex-direction:column;gap:4px;align-items:center;}
+.mode-pill{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;}
+.pill-full{background:rgba(201,168,76,.28);color:var(--gold2);border:1px solid rgba(201,168,76,.45);}
+.pill-custom{background:rgba(100,220,150,.2);color:#80ffb0;border:1px solid rgba(100,220,150,.35);}
+.subj-pill{font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);}
+.timer-box{display:flex;align-items:center;gap:5px;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;}
+.timer-box.warn{color:#ff8080;}
+.timer-box.hidden{visibility:hidden;}
+.pbar{height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin-top:8px;width:100%;}
+.pfill{height:100%;background:var(--gold);border-radius:2px;transition:width .4s;}
+
+.qcard{background:var(--white);border-radius:var(--r);padding:22px 26px;margin-bottom:1rem;box-shadow:var(--sh);}
+.qlabel{font-size:11px;font-weight:800;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.qtext{font-size:17px;line-height:1.85;font-weight:500;}
+.opts{display:flex;flex-direction:column;gap:9px;margin-bottom:1rem;}
+.opt{display:flex;align-items:flex-start;gap:13px;background:var(--white);border:1.5px solid #e0dcd5;border-radius:var(--r);padding:13px 17px;cursor:pointer;text-align:left;font-size:15px;color:var(--text);transition:all .12s;width:100%;line-height:1.65;}
+.opt:hover:not(:disabled){border-color:var(--navy);background:var(--bbg);}
+.opt.selected{border-color:var(--blue);background:var(--bbg);color:var(--blue);}
+.opt.correct{border-color:var(--green);background:var(--gbg);color:var(--green);}
+.opt.wrong{border-color:var(--red);background:var(--rbg);color:var(--red);}
+.opt:disabled{cursor:default;}
+.olabel{font-weight:800;min-width:22px;}
+.exp-card{background:#fffbf0;border-left:4px solid var(--gold);border-radius:0 var(--r) var(--r) 0;padding:13px 18px;font-size:14px;color:#5a4a18;line-height:1.7;display:none;margin-bottom:1rem;}
+.reveal-btn{background:none;border:none;font-size:13px;color:var(--blue);cursor:pointer;text-decoration:underline;padding:4px 0;display:none;}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+.nbtn{background:var(--white);border:1.5px solid #d0ccc5;border-radius:var(--r);padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer;color:var(--text);transition:all .12s;}
+.nbtn:hover{border-color:var(--navy);color:var(--navy);}
+.nbtn.primary{background:var(--navy);color:var(--white);border-color:var(--navy);}
+.nbtn.primary:hover{background:var(--navy2);}
+.ainfo{font-size:13px;color:var(--muted);}
+
+/* ===== RESULT ===== */
+#result{display:none;max-width:720px;margin:0 auto;padding:2rem 1rem;}
+.rhead{text-align:center;margin-bottom:2rem;}
+.sring{width:150px;height:150px;margin:0 auto 1.5rem;position:relative;}
+.sring svg{transform:rotate(-90deg);}
+.stext{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+.sbig{font-size:30px;font-weight:800;color:var(--navy);display:block;}
+.sdenom{font-size:13px;color:var(--muted);}
+.rmsg{font-size:20px;font-weight:700;margin-bottom:.25rem;}
+.rpct{font-size:14px;color:var(--muted);}
+.rsec{margin:1.5rem 0;}
+.rsec-title{font-size:12px;font-weight:800;letter-spacing:1px;color:var(--muted);margin-bottom:10px;padding-bottom:4px;border-bottom:2px solid var(--gold);}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;}
+.rc{background:var(--white);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);}
+.rc-name{font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.4;}
+.rc-score{font-size:22px;font-weight:800;}
+.rc-pct{font-size:12px;color:var(--muted);}
+.retry{background:var(--navy);color:var(--white);border:none;border-radius:var(--r);padding:13px 48px;font-size:16px;font-weight:700;cursor:pointer;display:block;margin:2rem auto 0;transition:background .15s;}
+.retry:hover{background:var(--navy2);}
+@media(max-width:520px){.topbar{position:static;}.qcard{padding:16px;}.ctitle{font-size:21px;}.mode-row{flex-direction:column;align-items:center;}}
+</style>
+</head>
+<body>
+
+<!-- ===== COVER ===== -->
+<div id="cover">
+  <div class="emblem">
+    <svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2zm-1 13l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z"/></svg>
+  </div>
+  <div class="ctitle">แบบทดสอบทหารชั้นประทวน</div>
+  <div class="csub">ข้อสอบแบบปรนัย 4 ตัวเลือก | สุ่มจากคลัง 360 ข้อ</div>
+
+  <!-- Mode selection -->
+  <div class="mode-row">
+    <div class="mode-card active" id="mode-full" onclick="selectMode('full')">
+      <div class="mode-icon">📋</div>
+      <div class="mode-title">สอบเต็มรูปแบบ</div>
+      <div class="mode-desc">ทำครบทุกวิชา 120 ข้อ ตรงตามโครงสร้างข้อสอบจริง จับเวลา 2 ชั่วโมง 30 นาทีอัตโนมัติ</div>
+      <span class="mode-tag tag-full">⏱ จับเวลา 2:30 ชั่วโมง</span>
+    </div>
+    <div class="mode-card" id="mode-custom" onclick="selectMode('custom')">
+      <div class="mode-icon">🎯</div>
+      <div class="mode-title">เลือกวิชาที่ต้องการฝึก</div>
+      <div class="mode-desc">เลือกทำเฉพาะวิชาที่ต้องการ ไม่จับเวลา เหมาะสำหรับฝึกซ้อมรายวิชา</div>
+      <span class="mode-tag tag-custom">✏️ ไม่จับเวลา</span>
+    </div>
+  </div>
+
+  <!-- Subject picker -->
+  <div id="subj-picker">
+    <div class="subj-checks" id="subj-checks"></div>
+  </div>
+
+  <div class="loading-box" id="loading-box">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">กำลังโหลดคลังข้อสอบ...</div>
+  </div>
+  <div class="error-box" id="error-box"></div>
+
+  <button class="start-btn" id="start-btn" onclick="startExam()">เริ่มทำข้อสอบ</button>
+  <div class="start-note" id="start-note">ทำครบ 120 ข้อ | จับเวลา 2 ชั่วโมง 30 นาที</div>
+</div>
+
+<!-- ===== EXAM ===== -->
+<div id="exam">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-counter" id="tb-counter">ข้อ 1 / 120</div>
+      <div class="tb-prog" id="tb-prog">ตอบแล้ว 0 ข้อ</div>
+    </div>
+    <div class="tb-mid">
+      <span class="mode-pill" id="mode-pill"></span>
+      <span class="subj-pill" id="subj-pill"></span>
+    </div>
+    <div class="timer-box" id="timer-box">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+      <span id="timer-text">2:30:00</span>
+    </div>
+    <div class="pbar" style="width:100%"><div class="pfill" id="pfill" style="width:0%"></div></div>
+  </div>
+
+  <div class="qcard">
+    <div class="qlabel" id="qlabel"></div>
+    <div class="qtext" id="qtext"></div>
+  </div>
+  <div class="opts" id="opts"></div>
+  <button class="reveal-btn" id="reveal-btn" onclick="revealAns()">▶ ดูเฉลยและคำอธิบาย</button>
+  <div class="exp-card" id="exp-card"></div>
+  <div class="nav">
+    <button class="nbtn" onclick="nav(-1)">← ก่อนหน้า</button>
+    <span class="ainfo" id="ainfo"></span>
+    <button class="nbtn primary" id="next-btn" onclick="nav(1)">ถัดไป →</button>
+  </div>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div id="result">
+  <div class="rhead">
+    <div class="sring">
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle cx="75" cy="75" r="62" fill="none" stroke="#e8e5e0" stroke-width="13"/>
+        <circle cx="75" cy="75" r="62" fill="none" id="sarc" stroke="#1a2e4a" stroke-width="13" stroke-linecap="round" stroke-dasharray="389.6" stroke-dashoffset="389.6"/>
+      </svg>
+      <div class="stext">
+        <span class="sbig" id="sbig">0/120</span>
+        <span class="sdenom">คะแนน</span>
+      </div>
+    </div>
+    <div class="rmsg" id="rmsg"></div>
+    <div class="rpct" id="rpct"></div>
+  </div>
+  <div id="result-body"></div>
+  <button class="retry" onclick="resetExam()">ทำข้อสอบใหม่</button>
+</div>
+
+<script>
+const SHEET_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQDOb5-mZNVgmA_452x_XkAY4jmwae8sz95CNTt7r8vM5ks-6ZQEBV8xDGwv3XnlpIVmmIeoMl_h__T/pub?output=csv";
+
+const SUBJECTS = [
+  { name:"ด้านการคำนวณ",              gid:"1115793668", pick:20 },
+  { name:"ด้านเหตุผล (การเชื่อมโยง)", gid:"1762333009", pick:20 },
+  { name:"ภาษาไทย",                   gid:"1104956609", pick:20 },
+  { name:"ภาษาอังกฤษ",                gid:"1687082512", pick:20 },
+  { name:"ความรู้การเป็นข้าราชการที่ดี", gid:"889135714", pick:20 },
+  { name:"ความรู้ทางทหาร",             gid:"1033819834", pick:20 },
+];
+const FULL_SEC = 2.5 * 3600;
+
+let allQ=[], examQ=[], answers=[], current=0;
+let timerSec=FULL_SEC, timerInterval=null;
+let dataLoaded=false, currentMode='full', selectedSubjs=new Set([0,1,2,3,4,5]);
+let useTimer=true;
+
+// ──────────────── Build subject picker ────────────────
+function buildPicker(){
+  const el=document.getElementById('subj-checks');
+  el.innerHTML = SUBJECTS.map((s,i)=>`
+    <label class="schk checked" id="schk-${i}" onclick="toggleSubj(${i})">
+      <input type="checkbox" id="chk-${i}" checked onclick="event.preventDefault()">
+      <div class="schk-info">
+        <span class="schk-name">${s.name}</span>
+        <span class="schk-meta">สุ่ม ${s.pick} ข้อ จากคลัง 60 ข้อ</span>
+      </div>
+    </label>`).join('');
+}
+
+function toggleSubj(i){
+  if(selectedSubjs.has(i)) selectedSubjs.delete(i);
+  else selectedSubjs.add(i);
+  document.getElementById(`schk-${i}`).classList.toggle('checked', selectedSubjs.has(i));
+  document.getElementById(`chk-${i}`).checked = selectedSubjs.has(i);
+  updateNote();
+}
+
+function selectMode(mode){
+  currentMode = mode;
+  document.getElementById('mode-full').classList.toggle('active', mode==='full');
+  document.getElementById('mode-custom').classList.toggle('active', mode==='custom');
+  document.getElementById('subj-picker').style.display = mode==='custom' ? 'block' : 'none';
+  if(mode==='full') selectedSubjs = new Set([0,1,2,3,4,5]);
+  updateNote();
+}
+
+function updateNote(){
+  const note = document.getElementById('start-note');
+  if(currentMode==='full'){
+    note.textContent = 'ทำครบ 120 ข้อ | จับเวลา 2 ชั่วโมง 30 นาที';
+  } else {
+    const sel = [...selectedSubjs].sort();
+    if(sel.length===0){ note.textContent='⚠ กรุณาเลือกอย่างน้อย 1 วิชา'; return; }
+    const total = sel.reduce((s,i)=>s+SUBJECTS[i].pick, 0);
+    note.textContent = `${sel.length} วิชา | ${total} ข้อ | ไม่จับเวลา`;
+  }
+}
+
+// ──────────────── CSV parser ────────────────
+function parseCSV(text){
+  const lines=text.trim().split('\n'), rows=[];
+  for(let i=1;i<lines.length;i++){
+    const cols=[], line=lines[i]; let cur='', inQ=false;
+    for(let c=0;c<line.length;c++){
+      const ch=line[c];
+      if(ch==='"'){inQ=!inQ;}
+      else if(ch===','&&!inQ){cols.push(cur.trim());cur='';}
+      else{cur+=ch;}
+    }
+    cols.push(cur.trim());
+    if(cols.length>=7&&cols[1]) rows.push({q:cols[1],a:cols[2],b:cols[3],c:cols[4],d:cols[5],ans:cols[6].trim(),exp:cols[7]||''});
+  }
+  return rows;
+}
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+// ──────────────── Load data ────────────────
+async function loadData(){
+  document.getElementById('loading-box').style.display='block';
+  document.getElementById('start-btn').disabled=true;
+  document.getElementById('error-box').style.display='none';
+  allQ=[];
+  try{
+    for(let i=0;i<SUBJECTS.length;i++){
+      document.getElementById('loading-text').textContent=`กำลังโหลด: ${SUBJECTS[i].name}...`;
+      const r=await fetch(`${SHEET_BASE}&gid=${SUBJECTS[i].gid}`);
+      if(!r.ok) throw new Error(`HTTP ${r.status} – ${SUBJECTS[i].name}`);
+      const rows=parseCSV(await r.text()); rows.forEach(q=>{q.si=i;}); allQ.push(rows);
+    }
+    dataLoaded=true;
+    document.getElementById('loading-text').textContent=`โหลดสำเร็จ! รวม ${allQ.reduce((s,a)=>s+a.length,0)} ข้อ`;
+    setTimeout(()=>document.getElementById('loading-box').style.display='none', 700);
+    document.getElementById('start-btn').disabled=false;
+  } catch(e){
+    document.getElementById('loading-box').style.display='none';
+    document.getElementById('error-box').style.display='block';
+    document.getElementById('error-box').innerHTML=`<strong>⚠ โหลดข้อมูลไม่สำเร็จ</strong><br>ตรวจสอบว่า Google Sheets ตั้งค่า "Publish to web" แล้ว<br><small style="opacity:.7">${e.message}</small>`;
+    document.getElementById('start-btn').disabled=false;
+  }
+}
+
+// ──────────────── Start exam ────────────────
+function startExam(){
+  if(!dataLoaded){alert('กรุณารอโหลดข้อมูลให้เสร็จก่อน');return;}
+  if(currentMode==='custom'&&selectedSubjs.size===0){alert('กรุณาเลือกอย่างน้อย 1 วิชา');return;}
+
+  useTimer = currentMode==='full';
+  const subjList = currentMode==='full' ? [0,1,2,3,4,5] : [...selectedSubjs].sort();
+
+  examQ=[];
+  subjList.forEach(i=>{
+    const picked=shuffle(allQ[i]||[]).slice(0,SUBJECTS[i].pick);
+    picked.forEach(q=>examQ.push({...q,si:i}));
+  });
+  answers=new Array(examQ.length).fill(-1);
+  current=0; timerSec=FULL_SEC;
+
+  document.getElementById('cover').style.display='none';
+  document.getElementById('exam').style.display='block';
+
+  const tbox=document.getElementById('timer-box');
+  if(useTimer){ tbox.classList.remove('hidden'); startTimer(); }
+  else { tbox.classList.add('hidden'); clearInterval(timerInterval); }
+
+  renderQ();
+}
+
+// ──────────────── Render question ────────────────
+function renderQ(){
+  const q=examQ[current], s=SUBJECTS[q.si];
+  const labels=['ก','ข','ค','ง'], opts=[q.a,q.b,q.c,q.d];
+
+  document.getElementById('tb-counter').textContent=`ข้อ ${current+1} / ${examQ.length}`;
+  const answered=answers.filter(a=>a!==-1).length;
+  document.getElementById('tb-prog').textContent=`ตอบแล้ว ${answered} ข้อ`;
+
+  const mp=document.getElementById('mode-pill');
+  if(useTimer){ mp.textContent='สอบเต็มรูปแบบ'; mp.className='mode-pill pill-full'; }
+  else { mp.textContent='ฝึกซ้อม'; mp.className='mode-pill pill-custom'; }
+  document.getElementById('subj-pill').textContent=s.name;
+  document.getElementById('pfill').style.width=`${((current+1)/examQ.length)*100}%`;
+  document.getElementById('qlabel').textContent=`วิชา: ${s.name}`;
+  document.getElementById('qtext').textContent=`${current+1}. ${q.q}`;
+
+  const oel=document.getElementById('opts'); oel.innerHTML='';
+  opts.forEach((o,i)=>{
+    const btn=document.createElement('button'); btn.className='opt';
+    if(answers[current]===i) btn.classList.add('selected');
+    btn.innerHTML=`<span class="olabel">${labels[i]}.</span><span>${o}</span>`;
+    btn.onclick=()=>selOpt(i);
+    oel.appendChild(btn);
+  });
+
+  document.getElementById('reveal-btn').style.display=answers[current]!==-1?'inline':'none';
+  document.getElementById('exp-card').style.display='none';
+  document.getElementById('next-btn').textContent=current===examQ.length-1?'ส่งข้อสอบ ✓':'ถัดไป →';
+  document.getElementById('ainfo').textContent=`ตอบแล้ว ${answered}/${examQ.length}`;
+}
+
+function selOpt(idx){ answers[current]=idx; renderQ(); }
+
+function revealAns(){
+  const q=examQ[current], labels=['ก','ข','ค','ง'];
+  const am={'ก':0,'ข':1,'ค':2,'ง':3,'a':0,'b':1,'c':2,'d':3};
+  const ci=am[q.ans.toLowerCase()]??0;
+  document.querySelectorAll('.opt').forEach((b,i)=>{
+    b.classList.remove('selected','correct','wrong'); b.disabled=true;
+    if(i===ci) b.classList.add('correct');
+    else if(i===answers[current]&&answers[current]!==ci) b.classList.add('wrong');
+  });
+  const ec=document.getElementById('exp-card');
+  ec.style.display='block';
+  ec.innerHTML=`<strong>เฉลย: ${labels[ci]}</strong>${q.exp?` — ${q.exp}`:''}`;
+  document.getElementById('reveal-btn').style.display='none';
+}
+
+function nav(dir){
+  if(dir===1&&current===examQ.length-1){
+    if(!confirm('ส่งข้อสอบและดูผลคะแนน?')) return;
+    submitExam(); return;
+  }
+  current=Math.max(0,Math.min(examQ.length-1,current+dir));
+  renderQ();
+  document.getElementById('exp-card').style.display='none';
+}
+
+// ──────────────── Timer ────────────────
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    timerSec--;
+    if(timerSec<=0){clearInterval(timerInterval); submitExam(); return;}
+    const h=Math.floor(timerSec/3600), m=Math.floor((timerSec%3600)/60), s=timerSec%60;
+    document.getElementById('timer-text').textContent=`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if(timerSec<600) document.getElementById('timer-box').classList.add('warn');
+  },1000);
+}
+
+// ──────────────── Submit ────────────────
+function submitExam(){
+  clearInterval(timerInterval);
+  const am={'ก':0,'ข':1,'ค':2,'ง':3,'a':0,'b':1,'c':2,'d':3};
+  let total=0;
+  const byS=SUBJECTS.map(()=>({c:0,t:0}));
+  examQ.forEach((q,i)=>{
+    const ci=am[q.ans.toLowerCase()]??0;
+    byS[q.si].t++;
+    if(answers[i]===ci){total++;byS[q.si].c++;}
+  });
+
+  document.getElementById('exam').style.display='none';
+  document.getElementById('result').style.display='block';
+
+  const pct=Math.round(total/examQ.length*100);
+  const circ=2*Math.PI*62;
+  document.getElementById('sarc').style.strokeDashoffset=circ*(1-pct/100);
+  document.getElementById('sarc').style.stroke=pct>=60?'#2d7a4f':'#b83232';
+  document.getElementById('sbig').textContent=`${total}/${examQ.length}`;
+  document.getElementById('rmsg').textContent=pct>=60?'🎖 ผ่านเกณฑ์':'📝 ไม่ผ่านเกณฑ์';
+  document.getElementById('rmsg').style.color=pct>=60?'#2d7a4f':'#b83232';
+  document.getElementById('rpct').textContent=`ได้ ${pct}% | ${useTimer?'สอบเต็มรูปแบบ (จับเวลา 2:30 ชม.)':'ฝึกซ้อมรายวิชา (ไม่จับเวลา)'}`;
+
+  let html='<div class="rsec"><div class="rsec-title">ผลแยกรายวิชา</div><div class="rgrid">';
+  SUBJECTS.forEach((s,i)=>{
+    if(!byS[i].t) return;
+    const bs=byS[i], p=Math.round(bs.c/bs.t*100);
+    html+=`<div class="rc">
+      <div class="rc-name">${s.name}</div>
+      <div class="rc-score" style="color:${p>=60?'#2d7a4f':'#b83232'}">${bs.c}/${bs.t}</div>
+      <div class="rc-pct">${p}%</div>
+    </div>`;
+  });
+  html+='</div></div>';
+  document.getElementById('result-body').innerHTML=html;
+}
+
+function resetExam(){
+  document.getElementById('result').style.display='none';
+  document.getElementById('cover').style.display='flex';
+}
+
+// ──────────────── Init ────────────────
+buildPicker();
+updateNote();
+loadData();
+</script>
+</body>
+</html>
